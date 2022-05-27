@@ -16,7 +16,7 @@ jobs:
       - name: Build
         run: cargo build --all-features
       - name: Run tests
-        run: cargo test --verbose --no-default-features --features find --no-fail-fast
+        run: cargo test --lib --verbose --no-default-features --features find --no-fail-fast
         env:
           RUST_LOG: trace
       - name: Clippy
