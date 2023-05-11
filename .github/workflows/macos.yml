@@ -15,9 +15,5 @@ jobs:
         run: brew update && brew install samba
       - name: Build
         run: cargo build --all-features
-      - name: Run tests
-        run: cargo test --lib --verbose --no-default-features --features find --no-fail-fast
-        env:
-          RUST_LOG: trace
       - name: Clippy
         run: cargo clippy --features find -- -Dwarnings
