@@ -7,6 +7,8 @@ mod file_stream;
 
 use std::ffi::CString;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "wide-string")]
+use std::os::windows::ffi::OsStrExt;
 
 pub use credentials::SmbCredentials;
 use file_stream::FileStream;
@@ -67,8 +69,13 @@ impl RemoteFs for SmbFs {
         // add connection
         trace!("connecting to {}", self.remote_name);
 
+        #[cfg(not(feature = "wide-string"))]
         let remote_name = Self::to_cstr(&self.remote_name);
 
+        #[cfg(feature = "wide-string")]
+        let remote_name = to_wide_string(&self.remote_name);
+
+        #[cfg(not(feature = "wide-string"))]
         let mut resource = WNet::NETRESOURCEA {
             dwDisplayType: WNet::RESOURCEDISPLAYTYPE_SHAREADMIN,
             dwScope: WNet::RESOURCE_GLOBALNET,
@@ -80,18 +87,47 @@ impl RemoteFs for SmbFs {
             lpRemoteName: remote_name.as_c_str().as_ptr() as *mut u8,
         };
 
+        #[cfg(feature = "wide-string")]
+        let mut resource = WNet::NETRESOURCEW {
+            dwDisplayType: WNet::RESOURCEDISPLAYTYPE_SHAREADMIN,
+            dwScope: WNet::RESOURCE_GLOBALNET,
+            dwType: WNet::RESOURCETYPE_DISK,
+            dwUsage: WNet::RESOURCEUSAGE_ALL,
+            lpComment: std::ptr::null_mut(),
+            lpLocalName: std::ptr::null_mut(),
+            lpProvider: std::ptr::null_mut(),
+            lpRemoteName: remote_name.as_ptr() as *mut u16,
+        };
+
+        #[cfg(not(feature = "wide-string"))]
         let username = self
             .credentials
             .username
             .as_mut()
             .map(|username| Self::to_cstr(username));
 
+        #[cfg(feature = "wide-string")]
+        let username = self
+            .credentials
+            .username
+            .as_mut()
+            .map(|username| to_wide_string(username));
+
+        #[cfg(not(feature = "wide-string"))]
         let password = self
             .credentials
             .password
             .as_mut()
             .map(|password| Self::to_cstr(password));
 
+        #[cfg(feature = "wide-string")]
+        let password = self
+            .credentials
+            .password
+            .as_mut()
+            .map(|password| to_wide_string(password));
+
+        #[cfg(not(feature = "wide-string"))]
         let result = unsafe {
             let username_ptr = username
                 .as_ref()
@@ -105,6 +141,24 @@ impl RemoteFs for SmbFs {
                 &mut resource as *mut WNet::NETRESOURCEA,
                 password_ptr as *const u8,
                 username_ptr as *const u8,
+                WNet::CONNECT_INTERACTIVE,
+            )
+        };
+
+        #[cfg(feature = "wide-string")]
+        let result = unsafe {
+            let username_ptr = username
+                .as_ref()
+                .map(|username| username.as_ptr())
+                .unwrap_or(std::ptr::null());
+            let password_ptr = password
+                .as_ref()
+                .map(|password| password.as_ptr())
+                .unwrap_or(std::ptr::null());
+            WNet::WNetAddConnection2W(
+                &mut resource as *mut WNet::NETRESOURCEW,
+                password_ptr as *const u16,
+                username_ptr as *const u16,
                 WNet::CONNECT_INTERACTIVE,
             )
         };
@@ -124,10 +178,19 @@ impl RemoteFs for SmbFs {
     fn disconnect(&mut self) -> RemoteResult<()> {
         self.check_connection()?;
 
+        #[cfg(not(feature = "wide-string"))]
         let remote_name = Self::to_cstr(&self.remote_name);
 
+        #[cfg(feature = "wide-string")]
+        let remote_name = to_wide_string(&self.remote_name);
+
+        #[cfg(not(feature = "wide-string"))]
         let result =
             unsafe { WNet::WNetCancelConnection2A(remote_name.as_ptr() as *mut u8, 0, TRUE) };
+
+        #[cfg(feature = "wide-string")]
+        let result =
+            unsafe { WNet::WNetCancelConnection2W(remote_name.as_ptr() as *mut u16, 0, TRUE) };
 
         if result == NO_ERROR {
             self.is_connected = false;
@@ -364,6 +427,14 @@ impl RemoteFs for SmbFs {
             .map_err(|e| RemoteError::new_ex(RemoteErrorType::IoError, e))
             .map(|file| ReadStream::from(Box::new(FileStream::from(file)) as Box<dyn ReadAndSeek>))
     }
+}
+
+#[cfg(feature = "wide-string")]
+fn to_wide_string(s: &str) -> Vec<u16> {
+    std::ffi::OsStr::new(s)
+        .encode_wide()
+        .chain(Some(0))
+        .collect()
 }
 
 #[cfg(test)]
