@@ -47,6 +47,8 @@ no-log = ["log/max_level_off"]
 vendored = ["pavao/vendored"]
 # tests
 with-containers = []
+# support non-ASCII characters
+wide-string=[]
 
 [[example]]
 name = "tree"
