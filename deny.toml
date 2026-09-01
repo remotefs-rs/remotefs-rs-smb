@@ -1,0 +1,66 @@
+# cargo-deny policy for the Rust project template.
+
+[graph]
+all-features = true
+
+[output]
+feature-depth = 1
+
+[advisories]
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "deny"
+unmaintained = "all"
+ignore = []
+
+[licenses]
+unused-allowed-license = "allow"
+allow = [
+  "Apache-2.0",
+  "BSD-1-Clause",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "MIT-0",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.8
+
+# The optional `vendored` feature (pavao/vendored) compiles Samba's own
+# libsmbclient sources in-tree via pavao-src/pavao-sys, which are GPL-3.0
+# because Samba itself is. pavao (MIT) is unaffected; scope the exception to
+# just the vendoring helper crates rather than allowing GPL-3.0 project-wide.
+[[licenses.exceptions]]
+allow = ["GPL-3.0"]
+name = "pavao-src"
+
+[[licenses.exceptions]]
+allow = ["GPL-3.0"]
+name = "pavao-sys"
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+allow = []
+deny = []
+skip = []
+skip-tree = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
