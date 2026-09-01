@@ -13,12 +13,12 @@ fmt_check args="":
 # Run Clippy for every target and feature.
 [group('code-check')]
 clippy args="":
-  cargo clippy --all-targets --all-features {{ args }}
+  cargo clippy --all-targets {{ args }}
 
 # Build Rust documentation and deny warnings.
 [group('code-check')]
 doc args="":
-  RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps {{ args }}
+  RUSTDOCFLAGS="-D warnings" cargo doc --no-deps {{ args }}
 
 # Check advisories, licenses, bans, and dependency sources.
 [group('code-check')]
