@@ -113,13 +113,13 @@ In case you want to test the aws s3 client, you need to follow these steps:
 
 1. Run containers
 
-    ```sh
-    docker-compose -f "tests/docker-compose.yml" up -d --build
-    ```
+   ```sh
+   docker-compose -f "tests/docker-compose.yml" up -d --build
+   ```
 
 2. Run tests with `cargo test --features with-containers`
 
 ---
 
-Thank you for any contribution!  
+Thank you for any contribution!\
 Christian Visintin
