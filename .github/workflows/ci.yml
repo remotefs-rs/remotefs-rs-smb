@@ -58,9 +58,22 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-linux-${{ hashFiles('**/Cargo.lock') }}
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient
+        run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient smbclient
       - name: Setup containers
         run: docker compose -f "tests/docker-compose.yml" up -d --build
+      - name: DEBUG probe samba share visibility
+        run: |
+          set -x
+          sleep 3
+          rm -rf /tmp/cargo-test
+          mkdir /tmp/cargo-test
+          ls -la /tmp/cargo-test
+          smbclient //127.0.0.1/temp -p 3445 -U test%test -W pavao -c "ls" || true
+          smbclient //127.0.0.1/temp -p 3445 -U test%test -W pavao -c "cd cargo-test; ls" || true
+          echo "hello" > /tmp/cargo-test/probe.txt
+          smbclient //127.0.0.1/temp -p 3445 -U test%test -W pavao -c "cd cargo-test; ls" || true
+          rm -rf /tmp/cargo-test
+          smbclient //127.0.0.1/temp -p 3445 -U test%test -W pavao -c "cd cargo-test; ls" || true
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
       - name: Install cargo-llvm-cov
