@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install nightly rustfmt
+        run: rustup toolchain install nightly --profile minimal --component rustfmt
+      - name: Check formatting
+        uses: dprint/check@9cb3a2b17a8e606d37aae341e49df3654933fc23 # v2.3
+        with:
+          dprint-version: 0.56.1
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient
+      - name: Lint
+        run: cargo clippy --all-targets --features find -- -D warnings
+
+  quality-linux:
+    name: Quality (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Cache Cargo data
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-linux-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient
+      - name: Setup containers
+        run: docker compose -f "tests/docker-compose.yml" up -d --build
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
+        with:
+          tool: cargo-llvm-cov
+      - name: Build
+        run: just build "--no-default-features --features find,with-containers"
+      - name: Test with coverage
+        run: just coverage "lcov.info" "--no-default-features --features find,with-containers"
+        env:
+          RUST_LOG: trace
+      - name: Upload to Coveralls
+        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: lcov.info
+
+  quality-macos:
+    name: Quality (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install dependencies
+        run: brew update && brew install samba
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - name: Build
+        run: just build "--features find"
+      - name: Lint
+        run: cargo clippy --features find -- -D warnings
+
+  quality-windows:
+    name: Quality (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - name: Build
+        run: just build "--features find"
+      - name: Test
+        run: cargo test --lib --no-default-features --features find --no-fail-fast
+        env:
+          RUST_LOG: trace
+      - name: Lint
+        run: cargo clippy --features find -- -D warnings
+
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient
+      - name: Build documentation
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --features find --no-deps
+
+  dependencies:
+    name: Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
+        with:
+          tool: cargo-deny
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - name: Check dependencies
+        run: just deny
