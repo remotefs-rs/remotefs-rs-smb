@@ -2,7 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
-## 0.4.1
+## 0.5.0
+
+Released on 2026-09-02
+
+### Breaking changes
+
+- add rust-native smb client
+
+> the pavao client types are now PavaoSmbFs, PavaoSmbCredentials, PavaoSmbOptions, PavaoSmbEncryptionLevel, and PavaoSmbShareMode; the Windows client types are now WNetSmbFs and WNetSmbCredentials. The plain SmbFs, SmbCredentials, SmbOptions, and SmbEncryptionLevel names belong to the new Rust-native client behind the smb feature.
+
+### Added
+
+- Breaking: add rust-native smb client
+
+> Add SmbFs, a RemoteFs implementation built on the pure-Rust smb crate, gated behind the new smb feature and driven by a caller-supplied Tokio runtime. Gate the libsmbclient client behind the pavao feature (still on by default) so both clients build together, document all clients, and bump to 0.5.0.
+
+## 0.4.0
 
 Released on 2026-09-02
 

@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient
       - name: Lint
-        run: cargo clippy --all-targets --features find -- -D warnings
+        run: cargo clippy --all-targets --features find,pavao,smb -- -D warnings
 
   quality-linux:
     name: Quality (Linux)
@@ -68,9 +68,9 @@ jobs:
         with:
           tool: cargo-llvm-cov
       - name: Build
-        run: just build "--no-default-features --features find,with-containers"
+        run: just build "--no-default-features --features find,pavao,smb,with-containers"
       - name: Test with coverage
-        run: just coverage "lcov.info" "--no-default-features --features find,with-containers"
+        run: just coverage "lcov.info" "--no-default-features --features find,pavao,smb,with-containers"
         env:
           RUST_LOG: trace
       - name: Upload to Coveralls
@@ -91,9 +91,9 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
       - name: Build
-        run: just build "--features find"
+        run: just build "--features find,pavao,smb"
       - name: Lint
-        run: cargo clippy --features find -- -D warnings
+        run: cargo clippy --all-targets --features find,pavao,smb -- -D warnings
 
   quality-windows:
     name: Quality (Windows)
@@ -105,13 +105,13 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
       - name: Build
-        run: just build "--features find"
+        run: just build "--features find,pavao,smb"
       - name: Test
-        run: cargo test --lib --no-default-features --features find --no-fail-fast
+        run: cargo test --lib --no-default-features --features find,smb --no-fail-fast
         env:
           RUST_LOG: trace
       - name: Lint
-        run: cargo clippy --features find -- -D warnings
+        run: cargo clippy --all-targets --features find,pavao,smb -- -D warnings
 
   documentation:
     name: Documentation
@@ -123,7 +123,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libsmbclient-dev libsmbclient
       - name: Build documentation
-        run: RUSTDOCFLAGS="-D warnings" cargo doc --features find --no-deps
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --features find,pavao,smb --no-deps
 
   dependencies:
     name: Dependencies

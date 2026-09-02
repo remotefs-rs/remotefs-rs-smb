@@ -40,7 +40,7 @@ setup_githooks:
 [group('code-check')]
 check:
   just fmt_check
-  just clippy "-- -D warnings"
-  just doc
+  just clippy "--features smb -- -D warnings"
+  just doc "--features smb"
   just deny
-  just test
+  just test "--features smb"

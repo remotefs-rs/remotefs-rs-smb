@@ -10,7 +10,12 @@ feature-depth = 1
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"
 unmaintained = "all"
-ignore = []
+ignore = [
+  # `smb` -> `sspi` -> `picky` -> `rsa`: RUSTSEC-2023-0071 (Marvin timing
+  # side channel). No patched `rsa` release exists. Revisit on every
+  # `smb`/`sspi` bump.
+  { id = "RUSTSEC-2023-0071", reason = "no fixed rsa release; transitive through sspi/picky" },
+]
 
 [licenses]
 unused-allowed-license = "allow"
