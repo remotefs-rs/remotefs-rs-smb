@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## 0.4.0
+## 0.4.1
 
 Released on 2026-09-02
 
