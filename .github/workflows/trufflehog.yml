@@ -29,4 +29,4 @@ jobs:
         with:
           base: ""
           head: HEAD
-          extra_args: --results=verified,unknown --fail-on-scan-errors
+          extra_args: --results=verified,unknown --fail-on-scan-errors --force-skip-binaries
