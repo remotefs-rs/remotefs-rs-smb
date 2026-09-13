@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.0
+
+Released on 2026-09-13
+
+### Breaking changes
+
+- migrate to remotefs 1
+
+> remotefs-smb now depends on remotefs 1. SmbFs is async (AsyncRemoteFs) and no longer takes an Arc<Runtime>; use SmbFs::into_blocking for RemoteFs. pwd and change_dir are gone: every path is absolute and rooted at the share. PavaoSmbFs offers one-shot transfers only (open, create, and append return UnsupportedFeature). Released as 1.0.0.
+
+### Added
+
+- Breaking: migrate to remotefs 1
+
+> SmbFs implements remotefs::AsyncRemoteFs natively and drops the runtime constructor parameter; SmbFs::into_blocking returns BlockingSmbFs for blocking callers. PavaoSmbFs and WNetSmbFs implement the remotefs 1 blocking contract. Every client takes absolute share-rooted paths, advertises capabilities, returns owned streams finished explicitly, and maps failures onto the remotefs 1 error taxonomy.
+
 ## 0.5.0
 
 Released on 2026-09-02
