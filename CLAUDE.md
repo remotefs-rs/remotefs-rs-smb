@@ -50,6 +50,9 @@ will pass. Tests in `src/client/windows/credentials.rs` and in the `rust_smb`
 submodules (`credentials`, `options`, `convert`) are plain unit tests and need
 no container.
 
+Rust-native container tests are `#[tokio::test(flavor = "multi_thread")]` and
+include a blocking suite through `BlockingSmbFs`.
+
 If a required tool is missing, say so. Never claim a check passed or silently
 swap in a weaker command.
 
@@ -62,15 +65,24 @@ client implementation providing SMB access. It is a library-only crate
 
 - **Three clients, prefixed by backend.** `src/client/rust_smb.rs`
   (`#[cfg(feature = "smb")]`) exposes `SmbFs`/`SmbCredentials`/
-  `SmbOptions` on every platform by wrapping the pure-Rust `smb` crate,
-  driven through a caller-supplied Tokio runtime with `block_on`.
-  `src/client/unix.rs`
+  `SmbOptions` on every platform by wrapping the pure-Rust `smb` crate as a
+  native `remotefs::AsyncRemoteFs`; `SmbFs::into_blocking(handle)` returns
+  `BlockingSmbFs` (`remotefs::adapters::blocking::BlockOn<SmbFs>`) for
+  blocking callers. `connect` captures the Tokio handle so drops can close
+  handles inside the runtime. Owned streams live in
+  `src/client/rust_smb/stream.rs`. `src/client/unix.rs`
   (`#[cfg(all(target_family = "unix", feature = "pavao"))]`) exposes
-  `PavaoSmbFs` and re-exports pavao's types with a `Pavao` prefix.
-  `src/client/windows.rs` (`#[cfg(target_family = "windows")]`) exposes
-  `WNetSmbFs`/`WNetSmbCredentials` over the Win32 `WNet` API and is always
-  compiled on Windows. `pavao` and `smb` must build together; `pavao` is a
-  default feature and `vendored` implies it.
+  `PavaoSmbFs`, a blocking `RemoteFs` that offers one-shot transfers only
+  (pavao's `SmbFile` borrows the client and is not `Send`), and re-exports
+  pavao's types with a `Pavao` prefix. `src/client/windows.rs`
+  (`#[cfg(target_family = "windows")]`) exposes `WNetSmbFs`/
+  `WNetSmbCredentials`, a blocking `RemoteFs` over the Win32 `WNet` API with
+  owned streams over `std::fs::File`. `pavao` and `smb` must build together;
+  `pavao` is a default feature and `vendored` implies it.
+- **Paths.** Every client parses paths with `crate::utils::path::SharePath`:
+  absolute (`remotefs::path::ensure_absolute`), rooted at the share (`/`),
+  `.` and empty components dropped, `..` and backslashes rejected. There is
+  no working directory. `WNetSmbFs` also accepts its own UNC root.
 - **Command layer.** `Justfile` is a thin importer. Each recipe group lives in
   its own file under `just/` (`build`, `test`, `code_check`, `changelog`,
   `publish`) and carries a `[group(...)]` attribute so `just --list` stays
