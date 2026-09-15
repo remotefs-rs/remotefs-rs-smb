@@ -8,7 +8,6 @@ mod file_stream;
 use std::fs::OpenOptions;
 use std::io::{self, Seek};
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
 pub use credentials::WNetSmbCredentials;
 use file_stream::{WNetReadStream, WNetWriteStream};
@@ -219,7 +218,7 @@ impl RemoteFs for WNetSmbFs {
         }
         trace!("connecting to {}", self.remote_name);
         let mut remote_name = Self::to_wide(&self.remote_name);
-        let mut resource = WNet::NETRESOURCEW {
+        let resource = WNet::NETRESOURCEW {
             dwDisplayType: WNet::RESOURCEDISPLAYTYPE_SHAREADMIN,
             dwScope: WNet::RESOURCE_GLOBALNET,
             dwType: WNet::RESOURCETYPE_DISK,
@@ -432,6 +431,7 @@ impl RemoteFs for WNetSmbFs {
         let file = OpenOptions::new()
             .create(true)
             .read(true)
+            .truncate(false)
             .write(true)
             .open(&local)
             .map_err(RemoteError::from)?;
