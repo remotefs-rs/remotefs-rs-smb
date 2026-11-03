@@ -2,20 +2,40 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.1
+
+Released on 2026-11-03
+
+### Fixed
+
+- accept backslash separators in share paths (#15)
+
+> - fix: accept backslash separators in share paths
+>
+> Paths built with Path::join on Windows contain a backslash, which every client rejected as an invalid SMB name character since the move to remotefs 1. A backslash can never be part of an SMB name, so share paths now treat both / and \ as separators on every platform, while .. and non-share roots are still rejected. The Rust-native client also built listed entry paths with the platform separator, so on Windows it returned entries such as /docs\a.txt; they now always use /.
+
 ## 1.0.0
 
 Released on 2026-09-15
 
 ### Breaking changes
 
-- migrate to remotefs 1
+- migrate to remotefs 1 (#13)
 
 > remotefs-smb now depends on remotefs 1. SmbFs is async (AsyncRemoteFs) and no longer takes an Arc<Runtime>; use SmbFs::into_blocking for RemoteFs. pwd and change_dir are gone: every path is absolute and rooted at the share. PavaoSmbFs offers one-shot transfers only (open, create, and append return UnsupportedFeature). Released as 1.0.0.
 
+- chore: release 1.0.0
+
+- fix(windows): satisfy clippy on windows
+
+- chore: release 1.0
+
 ### Added
 
-- Breaking: migrate to remotefs 1
+- Breaking: migrate to remotefs 1 (#13)
 
+> - feat!: migrate to remotefs 1
+>
 > SmbFs implements remotefs::AsyncRemoteFs natively and drops the runtime constructor parameter; SmbFs::into_blocking returns BlockingSmbFs for blocking callers. PavaoSmbFs and WNetSmbFs implement the remotefs 1 blocking contract. Every client takes absolute share-rooted paths, advertises capabilities, returns owned streams finished explicitly, and maps failures onto the remotefs 1 error taxonomy.
 
 ## 0.5.0
