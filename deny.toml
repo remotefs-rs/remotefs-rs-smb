@@ -15,6 +15,12 @@ ignore = [
   # side channel). No patched `rsa` release exists. Revisit on every
   # `smb`/`sspi` bump.
   { id = "RUSTSEC-2023-0071", reason = "no fixed rsa release; transitive through sspi/picky" },
+  # `smb` -> `sspi` -> `picky` -> `crypto-bigint`: RUSTSEC-2026-0387 (timing
+  # variability in constant-time big-integer operations). `smb` 0.11 pins `sspi`
+  # to `=0.18.7`, and `sspi` pins `crypto-bigint` to `=0.7.0-rc.8`, so
+  # `cargo update` cannot reach the patched 0.7.6 or later. Revisit on every
+  # `smb`/`sspi` bump; `smb` 0.12 may release the pin.
+  { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.7.0-rc.8 pinned exactly by sspi 0.18.7 via smb 0.11; no patched version reachable" },
 ]
 
 [licenses]
